@@ -25,7 +25,7 @@ module GemHelpers
       s.files      = normalize_files(repo.ls_files.keys - repo.lib.ignored_files)
       s.test_files = normalize_files(Dir['spec/**/*.rb'] - repo.lib.ignored_files)
 
-      s.has_rdoc = false  #*
+      s.has_rdoc = 'yard'  # trying out arg[0]/lsegal's doc tool
       #s.extra_rdoc_files = %w[README.rdoc MIT-LICENSE.txt History.txt]
       #s.extra_rdoc_files = %w[MIT-LICENSE.txt History.txt]
 

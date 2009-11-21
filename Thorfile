@@ -6,12 +6,12 @@ module GemHelpers
     require "cli"
     
     Gem::Specification.new do |s|    
-      s.name      = 'hipe-btree'
+      s.name      = 'hipe-simplebtree'
       s.version   = Hipe::Cli::VERSION
       s.required_rubygems_version = Gem::Requirement.new("> 1.3.1") if s.respond_to? :required_rubygems_version=
       s.author    = "Mark Meves"
       s.email     = "mark.meves@gmail.com"
-      s.homepage  = "http://github.com/hipe/hipe-btree"
+      s.homepage  = "http://github.com/hipe/hipe-simplebtree"
       s.date      = %q{2009-11-20}  
       s.summary   = %q{Experiment}  
       s.description  = <<-EOS.strip
@@ -51,7 +51,7 @@ module GemHelpers
   end
 
   def read_gemspec
-    @read_gemspec ||= eval(File.read("hipe-btree.gemspec"))
+    @read_gemspec ||= eval(File.read("hipe-simplebtree.gemspec"))
   end
 
   def sh(command)
@@ -63,9 +63,9 @@ end
 class Default < Thor
   include GemHelpers
 
-  desc "gemspec", "Regenerate hipe-btree.gemspec"
+  desc "gemspec", "Regenerate hipe-simplebtree.gemspec"
   def gemspec
-    File.open("hipe-btree.gemspec", "w") do |file|
+    File.open("hipe-simplebtree.gemspec", "w") do |file|
       gemspec_ruby = generate_gemspec.to_ruby
       gemspec_ruby = prettyify_array(gemspec_ruby, :files)
       gemspec_ruby = prettyify_array(gemspec_ruby, :test_files)
@@ -74,13 +74,13 @@ class Default < Thor
       file.write gemspec_ruby
     end
 
-    puts "Wrote gemspec to hipe-btree.gemspec"
+    puts "Wrote gemspec to hipe-simplebtree.gemspec"
     read_gemspec.validate
   end
 
-  desc "build", "Build a hipe-btree gem"
+  desc "build", "Build a hipe-simplebtree gem"
   def build
-    sh "gem build hipe-btree.gemspec"
+    sh "gem build hipe-simplebtree.gemspec"
     FileUtils.mkdir_p "pkg"
     FileUtils.mv read_gemspec.file_name, "pkg"
   end

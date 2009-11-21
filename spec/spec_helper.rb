@@ -1,7 +1,7 @@
 require "rubygems"
 require "test/unit"
 require "spec"
-require "hipe-btree"
+require "hipe-simplebtree"
 
 # gem install redgreen for colored test output
 begin require "redgreen" unless ENV['TM_CURRENT_LINE']; rescue LoadError; end

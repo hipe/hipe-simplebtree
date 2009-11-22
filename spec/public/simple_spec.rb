@@ -10,4 +10,6 @@ describe "btree" do
     arr.should == ['gamma','beta','alpha']
   end
   
+  it "shouuld"
+  
 end

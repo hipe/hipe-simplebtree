@@ -586,7 +586,7 @@ class Hipe::SimpleBTreeTest < Test::Unit::TestCase
     assert_equal("#<Hipe::SimpleBTree: ...>", default)
     assert_equal("nil", cmp_proc)
   end
-  
+    
   def west_lower_bound
     rbtree = Hipe::SimpleBTree[*%w(a A c C e E)]
     assert_equal(["c", "C"], rbtree.lower_bound("c"))

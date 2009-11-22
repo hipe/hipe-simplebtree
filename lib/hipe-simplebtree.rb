@@ -19,6 +19,7 @@ module Hipe
       super
       @cmp_proc = nil
       @sorted_keys = [] # with a new hash it is always empty, right? (we don't have [] literal construtors)
+      @tree = nil
     end
 
     # @see Hash::[]
@@ -27,6 +28,11 @@ module Hipe
     end
 
     attr_accessor :cmp_proc
+    
+    def cmp_proc= proc
+      raise TypeError.new(%{must be proc not "#{proc.class}"}) unless (@cmp_proc = proc).instance_of?(Proc)||(!proc)
+      sort_keys!
+    end
 
     # the unless method_defined? below are so we can reload this file from irb
 
@@ -83,7 +89,7 @@ module Hipe
     end
 
     def == (other)
-      super && @sorted_keys == other.sorted_keys && @cmp_proc == other.cmp_proc
+      super && @sorted_keys == other.send(:sorted_keys) && @cmp_proc == other.cmp_proc
     end
 
     def each &proc
@@ -121,7 +127,7 @@ module Hipe
       if block_given?
         eaches = []
         @sorted_keys.each { |k| eaches << [k,self[k]] if proc.call(k,self[k]) }
-        Hipe::SimpleBTree[eaches]  #* we don't know what to do about default & default proc & sort :{note4}
+        Hipe::SimpleBTree[eaches]  #* we don't know what to do about default & default proc & sort # note 4
       else
         each
       end
@@ -152,6 +158,7 @@ module Hipe
         my_keys << use_key
         my_keys.sort!(&@cmp_proc) # we want this to throw type comparison error
         @sorted_keys = my_keys
+        @tree = nil # we loose a lot of sorted data when we add just one element.  # note 6.
       end
       super use_key, value
     end
@@ -161,6 +168,7 @@ module Hipe
         ret = default_proc ? default_proc.call(self, nil) : default
       else
         key = @sorted_keys.pop
+        @tree = nil
         ret = [key, delete(key)]
       end
       return ret
@@ -178,7 +186,7 @@ module Hipe
 
     def flatten;    each.flatten;                 end
                                                   
-    def clear;      super; @sorted_keys.clear;    end
+    def clear;      super; @sorted_keys.clear; @tree = nil;  end
                                                   
     def update x;   super x; sort_keys!;          end
                                                   
@@ -219,9 +227,12 @@ module Hipe
       end
     end      
 
+    def stats; tree.stats; end
+    
     protected
 
     attr_accessor :sorted_keys
+    
 
     # there are several ways to construct a SimpleBtree with the [] class method.
     # These are identical to the variants of the [] method of the Hash class, plus one more 
@@ -274,12 +285,53 @@ module Hipe
       my_keys.sort!(&@cmp_proc) #might throw type comparison error
       @sorted_keys = my_keys
     end
-  end # class
+        
+    def tree
+      @tree = @sorted_keys.size == 0 ? nil : Tree.new(@sorted_keys, 0, @sorted_keys.size-1,1) if @tree.nil?
+      @tree
+    end
+    
+    # just to be incendiary, we don't distinguish among leaf nodes, branch nodes, and root nodes.
+    # @private
+    class Tree
+      def initialize(ary, start_index, end_index, depth=0)
+        @depth = depth
+        width = end_index - start_index + 1
+        value_index = start_index + width / 2 
+        value_index -= 1 if depth % 2 == 0 and width % 2 == 0 and width != 1
+        @key = ary[value_index]
+        @left = (value_index == start_index) ? nil : Tree.new(ary, start_index, value_index-1, depth + 1)
+        @right = (value_index == end_index)  ? nil : Tree.new(ary, value_index + 1, end_index, depth + 1)       
+      end
+      
+      def stats
+        heights = [1]
+        mins = [] 
+        num_nodes = 1
+        ['@left','@right'].each do |name|
+          child = instance_variable_get(name)
+          if (child)
+            stats = child.stats
+            heights << stats[:height]
+            mins    << stats[:min_height]
+            num_nodes += stats[:num_nodes] 
+          end
+        end
+        {
+          :height => heights.max + 1,
+          :min_height => (mins.size==0) ? 1 : (mins.min + 1),
+          :num_nodes => num_nodes
+        } 
+      end #stats
+    end # class Tree
+  end # class SimpleBTree
 end # Hipe
 
 
-# {note1}: DONE consider making this descend from Hash
-# {node2}: when to copy over cmp_proc et all? when not to?
-# {note3}: DONE reafactor iterators to all use _enumerate
-# {note4}: (deep copy questions)
-# {note5}: when we are running this from irb we only want to do alias-method once
+# note 1: DONE consider making this descend from Hash
+# note 2: when to copy over cmp_proc et all? when not to?
+# note 3: DONE reafactor iterators to all use _enumerate
+# note 4: (deep copy questions)
+# note 5: when we are running this from irb we only want to do alias-method once
+# note 6: i know nothing about efficient ways to re-tree
+# note 7: considering making a lazy accessor for sorted_keys like tree

@@ -114,3 +114,89 @@ class Release < Thor
     sh "gem push pkg/#{read_gemspec.file_name}"
   end
 end
+
+#************ the below added by mark************
+class Spec < Thor
+  desc "crazy", "try to pull in the latest rbtree test file,\n"+
+  "                                    modify it and save it."
+  def crazy    
+    require 'pp'
+    @gem_basename = 'rbtree'
+    @my_version = Gem::Version.new('0.2.9')
+    dep = Gem::Dependency.new @gem_basename, Gem::Requirement.default
+    
+    specs = Gem.source_index.search dep
+    local_tuples = specs.map do |spec|
+      [[spec.name, spec.version, spec.original_platform, spec], :local]
+    end
+    local_tuples.extend Crazy
+    puts "local #{@gem_basename} gem(s) currently installed:\n" + local_tuples.print
+    if (t=local_tuples.max_tuple and t[0][1] > @my_version)
+      begin; make_test_file(t); rescue => e; puts e.message; end
+    else
+      puts "your testfile is probably up to date."
+    end
+
+    print "\nShould we check for newer versions of #{@gem_basename} remotely? (y/n):";
+    if ('y'==$stdin.gets.strip)
+      begin
+        puts "attempting to fetch remote info about #{@gem_basename}..."
+        fetcher = Gem::SpecFetcher.fetcher
+        remote_tuples = fetcher.find_matching dep, 'all versions', 'match platform', 'prerelease'
+        puts "done attempting remote"      
+      rescue Gem::RemoteFetcher::FetchError => e
+        puts "Failed To Connect? (will try local cache) "+e.message
+        require 'rubygems/source_info_cache'
+        dep.name = '' if dep.name == //
+        specs = Gem::SourceInfoCache.search_with_source dep, false, all
+        remote_tuples = specs.map do |spec, source_uri|
+          [[spec.name, spec.version, spec.original_platform, spec],
+           source_uri]
+        end
+      end
+      remote_tuples.extend Crazy 
+      puts "remote #{@gem_basename} gems found:"+remote_tuples.print
+      if (t = remote_tuples.max_tuple and t[0][1] > @my_version)
+        str = t[0][1].to_s
+        puts "The remote version of #{@gem_basename} (#{str}) is more recent than "+
+        "the test file in version control. (#{@my_version})  Consider updating your #{@gem_basename} gem."
+      end
+    end
+    puts 'done.';
+  end
+  def make_test_file tuple
+    dir_basename = tuple[0][0]+'-'+tuple[0][1].to_s
+    filename = File.dirname(__FILE__)+'/test-'+tuple[0][1].to_s+'.rb'
+    if File.exists? filename
+      puts %{\n\nFile already exists: #{File.basename filename}. No need to run script?}
+      return
+    end
+    path = File.expand_path("#{File.dirname(__FILE__)}/../#{dir_basename}/test.rb")
+    raise "sorry, couldn't find test file to copy: #{path}" unless File.exist? path
+    contents = nil
+    File.open(path,'r'){ |fh| contents = fh.read }
+    unless md = %r{\Arequire "\./rbtree"(.+)class MultiRBTreeTest <.+\Z}m.match(contents)
+      raise "sorry, failed to parse file contents."
+    end
+    File.open filename, 'w+' do |fh|
+      msg = %{#Generated #{Time.now.strftime('%Y/%m/%d %I:%M:%S%p')} by #{__FILE__}}
+      fh.write %{require 'rubygems'\nrequire 'hipe-simplebtree'\n\n}+md[1].gsub('RBTree','Hipe::SimpleBTree')
+    end
+    puts %{\n\nGenerated test file.  Try running "ruby #{File.basename(filename)}" and keep your fingers crossed!}
+  end
+end
+
+module Crazy
+  def print
+    return '[none]' if count == 0
+    lines = []
+    self.each{|t| lines << %{#{t[0][0]} #{t[0][1]}} }
+    lines * "\n"
+  end
+  def max_tuple
+    self.inject{|left,right| left[0][1] > right[0][1] ? left : right }
+  end
+end
+
+#arr = Gem.source_index.find_name('gem_basename')
+#list = Gem::CommandManager.instance['list']    

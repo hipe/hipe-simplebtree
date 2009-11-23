@@ -15,7 +15,7 @@ describe "btree" do
     ks = %w(jim jason bob yoko sam sarah dillenger escape plan frank will)    
     arr = ks.zip(Array.new(ks.size, true))
     t = Hipe::SimpleBTree[arr]
-    t.stats.should == {:height=>5, :min_height=>4, :num_nodes=>11}
+    t.stats.should == {:height=>4, :min_height=>4, :num_nodes=>11}
   end
   
 end

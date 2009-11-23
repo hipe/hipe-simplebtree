@@ -3,20 +3,27 @@ module GemHelpers
 
   def generate_gemspec
     $LOAD_PATH.unshift(File.expand_path(File.join(File.dirname(__FILE__), "lib")))
-    require "cli"
+    require "hipe-simplebtree"
     
     Gem::Specification.new do |s|    
       s.name      = 'hipe-simplebtree'
-      s.version   = Hipe::Cli::VERSION
+      s.version   = Hipe::SimpleBTree::VERSION
       s.required_rubygems_version = Gem::Requirement.new("> 1.3.1") if s.respond_to? :required_rubygems_version=
-      s.author    = "Mark Meves"
+      s.authors   = ["Mark Meves"]
       s.email     = "mark.meves@gmail.com"
       s.homepage  = "http://github.com/hipe/hipe-simplebtree"
-      s.date      = %q{2009-11-20}  
-      s.summary   = %q{Experiment}  
+      s.date      = %q{2009-11-23}  
+      s.summary   = %q{Simple pure-ruby port of Ozawa's RBTree'}  
       s.description  = <<-EOS.strip
-      just playing around
+      This is a pure-ruby port of Takuma Ozawa's RBTree.  (it has an identical
+      interface and uses the identical unit tests from his version 0.3.0,
+      however it is *not* a Red-Black tree.) It's intended for doing lookups and 
+      not for doing lots of insertions or deletions.  Please see RBTree docs
+      for a sense of how this is supposed to be used. 
+      (This one runs the unit tests about 15% slower than Ozawa's C-version,
+      and 80% less lines of code ;) 
       EOS
+      
       # s.rubyforge_project = "webrat"
 
       require "git"

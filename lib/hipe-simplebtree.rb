@@ -8,6 +8,8 @@ module Hipe
   # faster than scanning all the elements of a sorted array to find this index.
 
   class SimpleBTree < Hash
+    
+    VERSION = '0.0.1'
 
     # @see Hash#new
     def initialize(*args,&block)

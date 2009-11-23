@@ -587,21 +587,21 @@ class Hipe::SimpleBTreeTest < Test::Unit::TestCase
     assert_equal("nil", cmp_proc)
   end
     
-  def west_lower_bound
+  def test_lower_bound
     rbtree = Hipe::SimpleBTree[*%w(a A c C e E)]
     assert_equal(["c", "C"], rbtree.lower_bound("c"))
     assert_equal(["c", "C"], rbtree.lower_bound("b"))
     assert_equal(nil, rbtree.lower_bound("f"))
   end
   
-  def west_upper_bound
+  def test_upper_bound
     rbtree = Hipe::SimpleBTree[*%w(a A c C e E)]
     assert_equal(["c", "C"], rbtree.upper_bound("c"))
     assert_equal(["c", "C"], rbtree.upper_bound("d"))
     assert_equal(nil, rbtree.upper_bound("Z"))
   end
   
-  def west_bound
+  def test_bound
     rbtree = Hipe::SimpleBTree[*%w(a A c C e E)]
     assert_equal(%w(a A c C), rbtree.bound("a", "c").flatten)
     assert_equal(%w(a A),     rbtree.bound("a").flatten)
@@ -613,7 +613,7 @@ class Hipe::SimpleBTreeTest < Test::Unit::TestCase
     assert_equal([], rbtree.bound("f", "Z"))
   end
   
-  def west_bound_block
+  def test_bound_block
     ret = []
     @btree.bound("b", "c") {|key, val|
       ret.push(key)
@@ -637,7 +637,7 @@ class Hipe::SimpleBTreeTest < Test::Unit::TestCase
     assert_equal(4, @btree.size)
   end
   
-  def west_first
+  def test_first
     assert_equal(["a", "A"], @btree.first)
     
     rbtree = Hipe::SimpleBTree.new("e")
@@ -647,7 +647,7 @@ class Hipe::SimpleBTreeTest < Test::Unit::TestCase
     assert_equal("e", rbtree.first)
   end
 
-  def west_last
+  def test_last
     assert_equal(["d", "D"], @btree.last)
     
     rbtree = Hipe::SimpleBTree.new("e")
@@ -657,7 +657,7 @@ class Hipe::SimpleBTreeTest < Test::Unit::TestCase
     assert_equal("e", rbtree.last)
   end
 
-  def west_readjust
+  def test_readjust
     assert_equal(nil, @btree.cmp_proc)
     
     @btree.readjust {|a, b| b <=> a }
@@ -670,7 +670,8 @@ class Hipe::SimpleBTreeTest < Test::Unit::TestCase
     assert_equal(proc, @btree.cmp_proc)
     
     @btree[0] = nil
-    assert_raises(ArgumentError) { @btree.readjust(nil) }
+    assert_equal(proc, @btree.cmp_proc)    
+    assert_raises(ArgumentError) { @btree.readjust(nil) }     
     assert_equal(5, @btree.size)
     assert_equal(proc, @btree.cmp_proc)
     
@@ -697,7 +698,7 @@ class Hipe::SimpleBTreeTest < Test::Unit::TestCase
     assert_raises(ArgumentError) { @btree.readjust(proc, proc) }
   end
   
-  def west_replace
+  def test_replace
     rbtree = Hipe::SimpleBTree.new { "e" }
     rbtree.readjust {|a, b| a <=> b}
     rbtree["a"] = "A"
@@ -711,7 +712,7 @@ class Hipe::SimpleBTreeTest < Test::Unit::TestCase
     assert_raises(TypeError) { @btree.replace("e") }
   end
   
-  def west_reverse_each
+  def test_reverse_each
     ret = []
     @btree.reverse_each { |key, val| ret.push([key, val]) }
     assert_equal(%w(d D c C b B a A), ret.flatten)
@@ -722,7 +723,7 @@ class Hipe::SimpleBTreeTest < Test::Unit::TestCase
     end
   end
   
-  def west_marshal
+  def test_marshal
     assert_equal(@btree, Marshal.load(Marshal.dump(@btree)))
     
     @btree.default = "e"
@@ -741,7 +742,7 @@ class Hipe::SimpleBTreeTest < Test::Unit::TestCase
   begin
     require "pp"
     
-    def west_pp
+    def test_pp
       assert_equal(%(#<Hipe::SimpleBTree: {}, default=nil, cmp_proc=nil>\n),
                    PP.pp(Hipe::SimpleBTree.new, ""))
       assert_equal(%(#<Hipe::SimpleBTree: {"a"=>"A", "b"=>"B"}, default=nil, cmp_proc=nil>\n),
@@ -780,6 +781,7 @@ EOS
       assert_equal(expected, PP.pp(rbtree, ""))
     end
   rescue LoadError
+    puts "got load error?"
   end
 end
 

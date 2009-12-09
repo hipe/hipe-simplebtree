@@ -13,6 +13,7 @@ module Hipe
 
     # @see Hash#new
     def initialize(*args,&block)
+      @write_mode = false
       @locked_stack = 0
       @insepcting = false
       @autosort = true
@@ -191,17 +192,16 @@ module Hipe
       end
     end    
 
-    def []= k, value
+    def []= key, value
       raise TypeError.new("can't modify simplebtree in iteration") if @locked_stack > 0
-      use_key = k
-      if (!has_key?(k))
-        my_keys = @sorted_keys.dup # the unit test requires this
-        my_keys << use_key
+      unless has_key? key or @write_mode
+        my_keys = @sorted_keys.dup # the unit test requires this two-step process
+        my_keys << key
         my_keys.sort!(&@cmp_proc) # we want this to throw type comparison error
         @sorted_keys = my_keys
         @tree = nil # we loose a lot of sorted data when we add just one element.  # note 6.
       end
-      super use_key, value
+      super key, value
     end
 
     def pop
@@ -288,6 +288,17 @@ module Hipe
       TypeError.new(%{cannot dump #{self.class} with default proc}) if @default_proc
       TypeError.new(%{cannot dump #{self.class} with compare proc}) if @cmp_proc    
       Marshal.dump(self)
+    end
+    
+    def write_mode_on
+      raise "write mode already on!" if @write_mode
+      @write_mode = true
+    end
+    
+    def write_mode_off
+      raise "write mode already off!" unless @write_mode
+      @write_mode = false
+      sort_keys!
     end
     
     protected
